@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinician Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js"></script>
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --bg: #f8f9fa;
+            --surface: #ffffff;
+            --primary: #007bff;
+            --danger: #dc3545;
+            --success: #28a745; /* Green */
+            --warning: #ffc107;
+            --text-main: #333;
+            --text-muted: #6c757d;
+            --border: #e9ecef;
+            --shadow: 0 4px 6px rgba(0,0,0,0.04);
+        }
+
+        body {
+            background-color: var(--bg);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-main);
+        }
+
+        /* --- LAYOUT GRID --- */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            align-items: start;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+        .container.nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 95%;
+            margin: 0 auto;
+        }
+        .logo { font-weight: 700; font-size: 1.2rem; }
+        .flex-row { display: flex; gap: 10px; align-items: center; }
+        
+        .btn { border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; text-decoration: none; display: inline-block;}
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: var(--bg); }
+        .btn-primary { background: var(--primary); color: white; padding: 8px 16px; }
+        .btn-secondary { background: var(--text-muted); color: white; padding: 6px 12px; }
+        .pill { background: #eef2ff; color: var(--primary); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .ghost-pill { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+
+        /* --- STATS SIDEBAR --- */
+        .stats-sidebar { display: flex; flex-direction: column; gap: 16px; }
+        .stat-card-solid {
+            padding: 24px 20px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: var(--shadow);
+            text-align: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 140px;
+        }
+        .stat-card-solid h3 { margin: 0 0 10px 0; font-size: 0.9rem; opacity: 0.9; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card-solid h1 { margin: 0; font-size: 3.5rem; font-weight: 700; line-height: 1; }
+        .stat-card-solid p { margin: 8px 0 0 0; font-size: 0.85rem; opacity: 0.8; }
+        .bg-primary { background-color: var(--primary); }
+        .bg-danger { background-color: var(--danger); }
+        .bg-warning { background-color: var(--warning); color: #333; }
+
+        /* --- MAIN CARDS --- */
+        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .col-span-2 { grid-column: span 2; }
+        .text-muted { color: var(--text-muted); }
+        .flex-between { justify-content: space-between; }
+        h2, h3 { margin-top: 0; }
+        .stat-chip {
+            padding: 12px 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .stat-chip strong {
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+        
+        .patient-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .patient-table th { text-align: left; color: var(--text-muted); font-size: 0.8rem; padding-bottom: 10px; border-bottom: 2px solid var(--bg); }
+        .patient-table td { padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .status-risk { background: #ffebee; color: var(--danger); }
+        .status-stable { background: #e8f5e9; color: #2e7d32; }
+
+        /* --- CHART (UPDATED) --- */
+        .chart-container {
+            display: flex; align-items: flex-end; justify-content: space-around;
+            height: 200px; /* Increased height */
+            background: var(--bg); border-radius: 8px; padding: 20px 15px 10px 15px; 
+            margin-top: 15px;
+            position: relative;
+        }
+        .chart-y-axis {
+            position: absolute;
+            left: 4px;
+            top: 10px;
+            bottom: 15px;
+            width: 38px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .chart-y-tick {
+            position: relative;
+        }
+        .chart-y-tick::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            width: 6px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .bar-group { 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end; 
+            height: 100%; width: 10%; 
+        }
+        
+        /* Bar styles */
+        .bar { 
+            width: 100%; 
+            border-radius: 4px; 
+            transition: height 0.4s ease-out, background-color 0.3s; 
+            min-height: 2px; /* Ensure visible even if 0 */
+            margin-bottom: 2px;
+        }
+        
+        /* Specific Bar Defaults */
+        .bar-active { background: #ccc; } 
+        .bar-sleep { background: #eee; }
+        
+        .axis-label { margin-top: 8px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+
+        .sleep-summary {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            gap: 4px 10px;
+        }
+
+        /* --- TIMELINE --- */
+        .timeline-item { border-left: 2px solid var(--border); padding-left: 15px; margin-bottom: 15px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: -5px; top: 5px; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; }
+
+        /* --- FORM --- */
+        input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; box-sizing: border-box; font-family: inherit; }
+        .w-full { width: 100%; }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.5); display: none;
+            justify-content: center; align-items: center;
+            z-index: 2000; backdrop-filter: blur(2px);
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 12px;
+            width: 90%; max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        body.high-contrast { --bg: #000; --surface: #000; --text-main: #fff; --border: #333; --shadow: none; }
+        @media (max-width: 1024px) {
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .stats-sidebar { flex-direction: row; flex-wrap: wrap; }
+            .stat-card-solid { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-content">
+            <div class="logo">CareCompass <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;">| Clinician Mode</span></div>
+            <div class="flex-row">
+                <span class="pill ghost-pill">Live overview</span>
+                <span>Dr. House</span>
+                <button class="btn btn-outline" onclick="toggleContrast()" style="padding: 5px 12px; width:auto;">👁️</button>
+                <a href="index.html" class="btn btn-outline" style="padding: 5px 12px;">← Home</a>
+                <a href="index.html" class="btn btn-outline" style="padding: 5px 15px;">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-layout">
+        <aside class="stats-sidebar">
+            <div class="stat-card-solid bg-primary">
+                <h3>Total Patients</h3>
+                <h1 id="statTotal">3</h1>
+                <p id="statTotalCopy">New this month</p>
+            </div>
+            <div class="stat-card-solid bg-danger">
+                <h3>Critical Alerts</h3>
+                <h1 id="statAlerts">1</h1>
+                <p>Requires review</p>
+            </div>
+            <div class="stat-card-solid bg-warning">
+                <h3>Pending Reports</h3>
+                <h1 id="statReports" style="color: #333;">12</h1>
+                <p style="color: #333;">End of month</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="card col-span-2">
+                <div class="flex-between flex-row">
+                    <div>
+                        <div class="pill" style="margin-bottom: 8px;">Morning rounds</div>
+                        <h2 style="margin-bottom: 6px;">Risk & Report Overview</h2>
+                        <p class="text-muted" style="margin:0;">Action-first dashboard with PDF export, live search, and smart correlations.</p>
+                    </div>
+                    <div>
+                         <button class="btn btn-primary" onclick="openAddPatient()">+ New Patient</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="min-height: 400px;">
+                <div class="flex-between flex-row" style="gap: 10px; margin-bottom: 15px;">
+                    <h3>Patient Overview</h3>
+                    <div class="flex-row">
+                        <input id="searchBox" type="text" placeholder="Search..." style="width: 140px; margin-bottom: 0;">
+                        <span class="pill ghost-pill" id="filterPill" style="display:none;">Filter: all</span>
+                    </div>
+                </div>
+                <table class="patient-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 15px;">Quick Stats</h3>
+                <div id="quickStats" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="stat-chip" style="background: #e8f5e9; border-left: 3px solid #28a745;">
+                        <strong>Avg Sleep</strong>
+                        <span class="text-muted" id="statAvgSleep">--</span>
+                    </div>
+                    <div class="stat-chip" style="background: #e0f2fe; border-left: 3px solid #0ea5e9;">
+                        <strong>Water Compliance</strong>
+                        <span class="text-muted" id="statWaterComp">--</span>
+                    </div>
+                    <div class="stat-chip" style="background: #fef3c7; border-left: 3px solid #f59e0b;">
+                        <strong>Food Compliance</strong>
+                        <span class="text-muted" id="statFoodComp">--</span>
+                    </div>
+                    <div class="stat-chip" style="background: #e0e7ff; border-left: 3px solid #6366f1;">
+                        <strong>Med Compliance</strong>
+                        <span class="text-muted" id="statMedsComp">--</span>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid var(--border);">
+                    <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">Recent Notes</h4>
+                    <div id="analysisTimeline" class="timeline" style="margin: 0; max-height: 200px; overflow-y: auto;"></div>
+                    <textarea id="clinicianNote" rows="2" placeholder="Add recommendation..." style="margin-top: 12px;"></textarea>
+                    <button class="btn btn-primary w-full" style="margin-top: 8px;" onclick="saveClinicianNote()">Update</button>
+                </div>
+            </div>
+
+            <div class="card col-span-2">
+                <div class="flex-between flex-row" style="margin-bottom: 15px;">
+                    <h3>Analysis: <span id="analysisName">Alex Doe</span></h3>
+                    <div class="flex-row">
+                        <select id="analysisSelect" style="width: 150px; margin-bottom:0;" onchange="selectAnalysis(this.value)"></select>
+                    </div>
+                </div>
+
+                <!-- Individual Graphs Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                    <!-- Sleep Graph -->
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--text-muted);">Sleep vs Incidents</h4>
+                        <p class="text-muted" style="text-align: center; font-size: 0.75rem; margin:0 0 8px 0;">Sleep hours vs behavior incidents</p>
+                        <div class="chart-container" id="chartSleep" style="height: 160px;">
+                            <div class="chart-y-axis" id="yAxisSleep"></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">M</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">W</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">F</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Water Graph -->
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--text-muted);">Water Intake</h4>
+                        <p class="text-muted" style="text-align: center; font-size: 0.75rem; margin:0 0 8px 0;">Drank events per day (expected: 3)</p>
+                        <div class="chart-container" id="chartWater" style="height: 160px;">
+                            <div class="chart-y-axis" id="yAxisWater"></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">M</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">W</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">F</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Food Graph -->
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--text-muted);">Food Intake</h4>
+                        <p class="text-muted" style="text-align: center; font-size: 0.75rem; margin:0 0 8px 0;">Meals eaten per day (expected: 3)</p>
+                        <div class="chart-container" id="chartFood" style="height: 160px;">
+                            <div class="chart-y-axis" id="yAxisFood"></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">M</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">W</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">F</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Medication Graph -->
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--text-muted);">Medication</h4>
+                        <p class="text-muted" style="text-align: center; font-size: 0.75rem; margin:0 0 8px 0;">Doses given per day (expected: 3)</p>
+                        <div class="chart-container" id="chartMeds" style="height: 160px;">
+                            <div class="chart-y-axis" id="yAxisMeds"></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">M</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">W</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">T</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">F</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                            <div class="bar-group"><div class="bar bar-active"></div><div class="bar bar-sleep"></div><div class="axis-label">S</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pie Chart Overview -->
+                <div style="margin-top: 25px; padding-top: 25px; border-top: 2px solid var(--border);">
+                    <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Weekly Average Distribution</h4>
+                    <p class="text-muted" style="text-align: center; font-size: 0.8rem; margin:0 0 20px 0;">All factors comparison (7-day average)</p>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 40px; flex-wrap: wrap;">
+                        <div id="pieChartContainer" style="position: relative; width: 220px; height: 220px;">
+                            <canvas id="pieChart" width="220" height="220"></canvas>
+                            <div id="pieCenterText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-main);" id="pieTotal">--</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Total Score</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px; min-width: 200px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: #c3e6cb;"></div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 0.85rem; font-weight: 600;">Sleep</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="pieSleepLabel">--</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: #0ea5e9;"></div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 0.85rem; font-weight: 600;">Water</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="pieWaterLabel">--</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: #f59e0b;"></div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 0.85rem; font-weight: 600;">Food</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="pieFoodLabel">--</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: #6366f1;"></div>
+                                <div style="flex: 1;">
+                                    <div style="font-size: 0.85rem; font-weight: 600;">Medication</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="pieMedsLabel">--</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="addPatientModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Add Patient</h3>
+            <label>Name</label>
+            <input id="newPName" placeholder="Alex Doe" />
+            <label>ID (no spaces)</label>
+            <input id="newPID" placeholder="alex" />
+            <label>Diagnosis</label>
+            <input id="newPDiag" placeholder="ASD Level 2" />
+            <label>Status</label>
+            <select id="newPStatus">
+                <option value="stable">Stable</option>
+                <option value="risk">Risk</option>
+            </select>
+            <div class="flex-row" style="margin-top: 20px;">
+                <button class="btn btn-primary w-full" onclick="savePatient()">Save Patient</button>
+                <button class="btn btn-outline w-full" onclick="closeAddPatient()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. DOM ELEMENTS ---
+        const patientTableBody = document.getElementById('patientTableBody');
+        const searchBox = document.getElementById('searchBox');
+        const analysisSelect = document.getElementById('analysisSelect');
+        const analysisName = document.getElementById('analysisName');
+        const modal = document.getElementById('addPatientModal');
+        const filterPill = document.getElementById('filterPill');
+
+        // --- 3. LOGIC ---
+        function hydrateStats() {
+            const patients = CareData.getPatients();
+            const count = patients.length;
+            const risks = patients.filter(p => p.status === 'risk').length;
+            document.getElementById('statTotal').textContent = count;
+            document.getElementById('statAlerts').textContent = risks;
+        }
+
+        function renderPatients(filter = '') {
+            const patients = CareData.getPatients();
+            const term = filter.toLowerCase();
+            const filtered = patients.filter(p => 
+                p.name.toLowerCase().includes(term) || p.id.includes(term)
+            );
+            
+            if(filterPill) filterPill.textContent = term ? `Filter: "${filter}"` : 'Filter: all';
+
+            patientTableBody.innerHTML = filtered.map(p => {
+                const badge = p.status === 'risk' ? 'status-risk' : 'status-stable';
+                const label = p.status === 'risk' ? 'Risk' : 'Stable';
+                return `
+                    <tr>
+                        <td><strong>${p.name}</strong><br><span class="text-muted" style="font-size:0.8em">#${p.id.toUpperCase()}</span></td>
+                        <td>${p.diagnosis}</td>
+                        <td><span class="status-badge ${badge}">${label}</span></td>
+                        <td>
+                            <button class="btn btn-outline" style="padding:4px 8px; font-size:0.8rem; margin-right:4px;" onclick="selectAnalysis('${p.id}')">View</button>
+                            <button class="btn btn-outline" style="padding:4px 8px; font-size:0.8rem; border-color: var(--danger); color: var(--danger);" onclick="removePatient('${p.id}')">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function populateAnalysisSelect() {
+            const patients = CareData.getPatients();
+            analysisSelect.innerHTML = patients.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            // Auto-select first if available
+            if(patients.length > 0) selectAnalysis(patients[0].id);
+        }
+
+        function selectAnalysis(id) {
+            analysisSelect.value = id;
+            const patients = CareData.getPatients();
+            const p = patients.find(x => x.id === id);
+            if(!p) return;
+
+            analysisName.textContent = p.name;
+            renderTimeline(id);
+            renderAllCharts(id, p.status);
+            updateQuickStats(id);
+        }
+
+        // --- GRAPH LOGIC ---
+        function renderAllCharts(id, status) {
+            const agg = CareData.aggregateWeekly(id);
+            const data = { sleeps: agg.sleeps, actives: agg.behaviors, labels: agg.labels };
+            const waterAgg = CareData.aggregateHydrationWeekly(id);
+            const foodAgg = CareData.aggregateFoodWeekly(id);
+            const medsAgg = CareData.aggregateMedsWeekly(id);
+
+            // Render Sleep Graph
+            renderSleepChart(id, status, data);
+            
+            // Render Water Graph
+            renderWaterChart(waterAgg, data.labels);
+            
+            // Render Food Graph
+            renderFoodChart(foodAgg, data.labels);
+            
+            // Render Medication Graph
+            renderMedsChart(medsAgg, data.labels);
+            
+            // Render Combined Comparison Graph
+            renderCombinedChart(data, waterAgg, foodAgg, medsAgg, status);
+        }
+
+        function renderSleepChart(id, status, data) {
+            const chartEl = document.getElementById('chartSleep');
+            const yAxisEl = document.getElementById('yAxisSleep');
+            const bars = chartEl.querySelectorAll('.bar-group');
+            const sleepValues = data.sleeps.filter(v => typeof v === 'number');
+            const maxSleep = Math.max(...sleepValues, 1);
+            const maxActive = Math.max(...data.actives, 1);
+
+            const activeColor = status === 'risk' ? '#dc3545' : '#28a745';
+            const sleepColor = status === 'risk' ? '#ffcdd2' : '#c3e6cb';
+
+            // Build Y-axis ticks
+            const ticks = [];
+            const effectiveMax = sleepValues.length ? Math.max(...sleepValues) : 8;
+            const top = Math.max(4, Math.ceil(effectiveMax));
+            const steps = 4;
+            const stepVal = top / steps;
+            for (let i = 0; i <= steps; i++) {
+                const val = (stepVal * i).toFixed(1);
+                ticks.unshift(`<div class="chart-y-tick">${val}h</div>`);
+            }
+            yAxisEl.innerHTML = ticks.join('');
+
+            bars.forEach((group, idx) => {
+                const activeBar = group.querySelector('.bar-active');
+                const sleepBar = group.querySelector('.bar-sleep');
+                const axisLabel = group.querySelector('.axis-label');
+
+                activeBar.style.backgroundColor = activeColor;
+                sleepBar.style.backgroundColor = sleepColor;
+
+                if (data.labels && data.labels[idx]) {
+                    axisLabel.textContent = data.labels[idx];
+                }
+
+                const hActive = maxActive ? (data.actives[idx] / maxActive) * 100 : 0;
+                const sleepVal = (typeof data.sleeps[idx] === 'number') ? data.sleeps[idx] : null;
+                const hSleep = (sleepVal !== null && maxSleep) ? (sleepVal / maxSleep) * 100 : 0;
+
+                activeBar.style.height = `${hActive}%`;
+                sleepBar.style.height = `${hSleep}%`;
+
+                if (sleepVal === null) {
+                    sleepBar.style.opacity = 0.15;
+                } else {
+                    sleepBar.style.opacity = 1;
+                }
+            });
+        }
+
+        function renderWaterChart(waterAgg, labels) {
+            const chartEl = document.getElementById('chartWater');
+            const yAxisEl = document.getElementById('yAxisWater');
+            const bars = chartEl.querySelectorAll('.bar-group');
+            const expectedMax = 3;
+
+            const activeColor = '#0ea5e9';
+            const sleepColor = '#cbd5f5';
+
+            // Build Y-axis ticks
+            const ticks = [];
+            const actualMax = Math.max(...waterAgg.water, 0);
+            const top = Math.max(expectedMax, Math.ceil(actualMax));
+            const steps = Math.min(4, top);
+            const stepVal = top / steps;
+            for (let i = 0; i <= steps; i++) {
+                const val = Math.round(stepVal * i);
+                ticks.unshift(`<div class="chart-y-tick">${val}x</div>`);
+            }
+            yAxisEl.innerHTML = ticks.join('');
+
+            bars.forEach((group, idx) => {
+                const activeBar = group.querySelector('.bar-active');
+                const sleepBar = group.querySelector('.bar-sleep');
+                const axisLabel = group.querySelector('.axis-label');
+
+                activeBar.style.backgroundColor = activeColor;
+                sleepBar.style.backgroundColor = sleepColor;
+                sleepBar.style.height = '0%';
+                sleepBar.style.opacity = 0;
+
+                if (labels && labels[idx]) {
+                    axisLabel.textContent = labels[idx];
+                }
+
+                const value = waterAgg.water[idx] || 0;
+                const h = expectedMax ? (value / expectedMax) * 100 : 0;
+                activeBar.style.height = `${h}%`;
+            });
+        }
+
+        function renderFoodChart(foodAgg, labels) {
+            const chartEl = document.getElementById('chartFood');
+            const yAxisEl = document.getElementById('yAxisFood');
+            const bars = chartEl.querySelectorAll('.bar-group');
+            const expectedMax = 3;
+
+            const activeColor = '#f59e0b';
+            const sleepColor = '#fed7aa';
+
+            // Build Y-axis ticks
+            const ticks = [];
+            const actualMax = Math.max(...foodAgg.food, 0);
+            const top = Math.max(expectedMax, Math.ceil(actualMax));
+            const steps = Math.min(4, top);
+            const stepVal = top / steps;
+            for (let i = 0; i <= steps; i++) {
+                const val = Math.round(stepVal * i);
+                ticks.unshift(`<div class="chart-y-tick">${val}x</div>`);
+            }
+            yAxisEl.innerHTML = ticks.join('');
+
+            bars.forEach((group, idx) => {
+                const activeBar = group.querySelector('.bar-active');
+                const sleepBar = group.querySelector('.bar-sleep');
+                const axisLabel = group.querySelector('.axis-label');
+
+                activeBar.style.backgroundColor = activeColor;
+                sleepBar.style.backgroundColor = sleepColor;
+                sleepBar.style.height = '0%';
+                sleepBar.style.opacity = 0;
+
+                if (labels && labels[idx]) {
+                    axisLabel.textContent = labels[idx];
+                }
+
+                const value = foodAgg.food[idx] || 0;
+                const h = expectedMax ? (value / expectedMax) * 100 : 0;
+                activeBar.style.height = `${h}%`;
+            });
+        }
+
+        function renderMedsChart(medsAgg, labels) {
+            const chartEl = document.getElementById('chartMeds');
+            const yAxisEl = document.getElementById('yAxisMeds');
+            const bars = chartEl.querySelectorAll('.bar-group');
+            const expectedMax = 3;
+
+            const activeColor = '#6366f1';
+            const sleepColor = '#c7d2fe';
+
+            // Build Y-axis ticks
+            const ticks = [];
+            const actualMax = Math.max(...medsAgg.meds, 0);
+            const top = Math.max(expectedMax, Math.ceil(actualMax));
+            const steps = Math.min(4, top);
+            const stepVal = top / steps;
+            for (let i = 0; i <= steps; i++) {
+                const val = Math.round(stepVal * i);
+                ticks.unshift(`<div class="chart-y-tick">${val}x</div>`);
+            }
+            yAxisEl.innerHTML = ticks.join('');
+
+            bars.forEach((group, idx) => {
+                const activeBar = group.querySelector('.bar-active');
+                const sleepBar = group.querySelector('.bar-sleep');
+                const axisLabel = group.querySelector('.axis-label');
+
+                activeBar.style.backgroundColor = activeColor;
+                sleepBar.style.backgroundColor = sleepColor;
+                sleepBar.style.height = '0%';
+                sleepBar.style.opacity = 0;
+
+                if (labels && labels[idx]) {
+                    axisLabel.textContent = labels[idx];
+                }
+
+                const value = medsAgg.meds[idx] || 0;
+                const h = expectedMax ? (value / expectedMax) * 100 : 0;
+                activeBar.style.height = `${h}%`;
+            });
+        }
+
+        function renderCombinedChart(data, waterAgg, foodAgg, medsAgg, status) {
+            // Calculate weekly averages (normalized to 0-100%)
+            const sleepValues = data.sleeps.filter(v => typeof v === 'number');
+            const avgSleep = sleepValues.length ? sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length : 0;
+            const sleepPercent = (avgSleep / 8) * 100; // Normalize to 8h max
+
+            const totalWater = waterAgg.water.reduce((a, b) => a + b, 0);
+            const avgWater = totalWater / 7;
+            const waterPercent = (avgWater / 3) * 100; // Normalize to expected 3
+
+            const totalFood = foodAgg.food.reduce((a, b) => a + b, 0);
+            const avgFood = totalFood / 7;
+            const foodPercent = (avgFood / 3) * 100; // Normalize to expected 3
+
+            const totalMeds = medsAgg.meds.reduce((a, b) => a + b, 0);
+            const avgMeds = totalMeds / 7;
+            const medsPercent = (avgMeds / 3) * 100; // Normalize to expected 3
+
+            // Draw pie chart
+            const canvas = document.getElementById('pieChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 90;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Colors
+            const colors = ['#c3e6cb', '#0ea5e9', '#f59e0b', '#6366f1'];
+            const values = [sleepPercent, waterPercent, foodPercent, medsPercent];
+            const labels = ['Sleep', 'Water', 'Food', 'Medication'];
+
+            // Calculate total for center text
+            const total = values.reduce((a, b) => a + b, 0);
+            const avgTotal = total / 4;
+            document.getElementById('pieTotal').textContent = Math.round(avgTotal) + '%';
+            document.getElementById('pieSleepLabel').textContent = `${avgSleep.toFixed(1)}h avg (${Math.round(sleepPercent)}%)`;
+            document.getElementById('pieWaterLabel').textContent = `${avgWater.toFixed(1)}x/day (${Math.round(waterPercent)}%)`;
+            document.getElementById('pieFoodLabel').textContent = `${avgFood.toFixed(1)}x/day (${Math.round(foodPercent)}%)`;
+            document.getElementById('pieMedsLabel').textContent = `${avgMeds.toFixed(1)}x/day (${Math.round(medsPercent)}%)`;
+
+            // Draw pie slices
+            let currentAngle = -Math.PI / 2; // Start from top
+            values.forEach((value, index) => {
+                if (value <= 0) return;
+                const sliceAngle = (value / 100) * 2 * Math.PI;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[index];
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                currentAngle += sliceAngle;
+            });
+        }
+
+        function updateQuickStats(id) {
+            const agg = CareData.aggregateWeekly(id);
+            const waterAgg = CareData.aggregateHydrationWeekly(id);
+            const foodAgg = CareData.aggregateFoodWeekly(id);
+            const medsAgg = CareData.aggregateMedsWeekly(id);
+
+            // Average Sleep
+            const sleepValues = agg.sleeps.filter(v => typeof v === 'number');
+            const avgSleep = sleepValues.length ? (sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length).toFixed(1) : '--';
+            document.getElementById('statAvgSleep').textContent = avgSleep !== '--' ? `${avgSleep}h` : '--';
+
+            // Water Compliance (percentage of expected)
+            const totalWater = waterAgg.water.reduce((a, b) => a + b, 0);
+            const waterComp = ((totalWater / (7 * 3)) * 100).toFixed(0);
+            document.getElementById('statWaterComp').textContent = `${waterComp}%`;
+
+            // Food Compliance
+            const totalFood = foodAgg.food.reduce((a, b) => a + b, 0);
+            const foodComp = ((totalFood / (7 * 3)) * 100).toFixed(0);
+            document.getElementById('statFoodComp').textContent = `${foodComp}%`;
+
+            // Medication Compliance
+            const totalMeds = medsAgg.meds.reduce((a, b) => a + b, 0);
+            const medsComp = ((totalMeds / (7 * 3)) * 100).toFixed(0);
+            document.getElementById('statMedsComp').textContent = `${medsComp}%`;
+        }
+
+        function renderTimeline(id) {
+            const timeline = document.getElementById('analysisTimeline');
+            const logs = CareData.getLogs(id);
+            timeline.innerHTML = logs.map(l => {
+                const label = (!l.mood || l.mood === '—') ? 'Event' : l.mood;
+                let detail = l.note && l.note.trim();
+                // If no free-text note but we have sleep info, show a sleep duration summary
+                if (!detail && (l.sleepStart || l.sleepEnd)) {
+                    const start = l.sleepStart || '22:00';
+                    const end = l.sleepEnd || '06:00';
+                    const [sh, sm] = start.split(':').map(Number);
+                    const [eh, em] = end.split(':').map(Number);
+                    let summary = 'Sleep duration: —';
+                    if (!isNaN(sh) && !isNaN(sm) && !isNaN(eh) && !isNaN(em)) {
+                        let startMins = sh * 60 + sm;
+                        let endMins = eh * 60 + em;
+                        if (endMins <= startMins) endMins += 24 * 60;
+                        const hours = (endMins - startMins) / 60;
+                        summary = `Sleep duration: ${hours.toFixed(1)}h (${start}–${end})`;
+                    }
+                    detail = summary;
+                }
+                if (!detail) detail = 'No note';
+                return `
+                <div class="timeline-item">
+                    <strong>${label}</strong>
+                    <p class="text-muted" style="margin:0; font-size:0.8rem">${detail}</p>
+                </div>`;
+            }).join('');
+        }
+
+        function saveClinicianNote() {
+            const note = document.getElementById('clinicianNote').value.trim();
+            if (!note) return alert('Please enter a note');
+            CareData.addClinicianNote(analysisSelect.value, note);
+            document.getElementById('clinicianNote').value = '';
+            alert('Note saved');
+        }
+
+        // --- MODAL & UI ---
+        function openAddPatient() { modal.style.display = 'flex'; }
+        function closeAddPatient() { modal.style.display = 'none'; }
+        
+        async function savePatient() {
+            const name = document.getElementById('newPName').value;
+            const id = document.getElementById('newPID').value;
+            const diagnosis = document.getElementById('newPDiag').value;
+            const status = document.getElementById('newPStatus').value;
+
+            if(!name || !id) return alert("Name and ID required");
+            
+            try {
+                await CareData.addPatient({ id, name, diagnosis, status, sleepHours: [7,7,7,7,7,7,7] });
+                hydrateStats();
+                renderPatients();
+                populateAnalysisSelect();
+                selectAnalysis(id); // Switch to new patient
+                closeAddPatient();
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeAddPatient(); });
+        searchBox.addEventListener('input', (e) => renderPatients(e.target.value));
+
+        function removePatient(patientId) {
+            const patient = CareData.getPatient(patientId);
+            if (!patient) return;
+            if (!confirm(`Remove ${patient.name}? This clears their local logs and notes.`)) return;
+            CareData.removePatient(patientId);
+            hydrateStats();
+            renderPatients();
+            populateAnalysisSelect();
+            if (analysisSelect.value === patientId) {
+                const patients = CareData.getPatients();
+                if (patients.length > 0) {
+                    selectAnalysis(patients[0].id);
+                } else {
+                    analysisName.textContent = 'No patients';
+                }
+            }
+        }
+
+        function toggleContrast() {
+            document.body.classList.toggle('high-contrast');
+            localStorage.setItem('contrast', document.body.classList.contains('high-contrast'));
+        }
+
+        function loadContrast() {
+            if (localStorage.getItem('contrast') === 'true') {
+                document.body.classList.add('high-contrast');
+            }
+        }
+
+        // Cross-tab/page update notifier
+        function broadcastRefresh() {
+            localStorage.setItem('cc-refresh', Date.now().toString());
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'cc-refresh') {
+                hydrateStats();
+                renderPatients();
+                if (analysisSelect.value) {
+                    const patients = CareData.getPatients();
+                    const p = patients.find(x => x.id === analysisSelect.value);
+                    if (p) {
+                        selectAnalysis(p.id);
+                    }
+                }
+            }
+        });
+
+        // --- INIT ---
+        window.onload = function() {
+            loadContrast();
+            hydrateStats();
+            renderPatients();
+            populateAnalysisSelect();
+        };
+    </script>
+</body>
+</html>

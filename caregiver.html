@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caregiver Quick-Log</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js"></script>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-content flex-between">
+            <div class="logo">CareCompass</div>
+            <div class="flex-row">
+                <a href="index.html" class="btn btn-outline" style="width:auto; padding: 6px 12px;">← Home</a>
+                <span class="pill ghost-pill">Caregiver Mode</span>
+                <button class="btn btn-outline" onclick="toggleContrast()" style="width:auto; padding: 5px 10px;">👁️</button>
+                <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%;"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="card floating-card" style="margin-bottom: 18px;">
+            <div class="flex-between flex-row">
+                <div>
+                    <div class="pill" style="margin-bottom: 8px;">Under 60 seconds</div>
+                    <h2 style="margin-bottom: 4px;">Capture today’s care story.</h2>
+                    <p class="text-muted">Quick taps, speech-to-text, and ABC prompts keep you moving.</p>
+                </div>
+            <div class="stat-chip" style="min-width: 220px;">
+                <strong id="nextDue">Next due soon</strong>
+                <span class="text-muted" id="nextDueCopy">Prompt hydration & meds check</span>
+            </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Select Patient</label>
+            <select id="patientSelect" onchange="loadPatientData()">
+                <option value="alex">Alex Doe (ID: 101)</option>
+                <option value="sarah">Sarah Smith (ID: 102)</option>
+                <option value="mike">Mike Jones (ID: 103)</option>
+            </select>
+            <div style="margin-top: 6px;">
+                <button class="btn btn-secondary" style="width:auto;" onclick="openAddPatient()">+ Add patient</button>
+                <button class="btn btn-outline" style="width:auto; border-color: var(--danger); color: var(--danger);" onclick="removeCurrentPatient()">Remove</button>
+            </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 10px; grid-template-columns: 2fr 1fr;">
+            <div class="card flex-between flex-row">
+                <div>
+                    <h3>Today's Snapshot</h3>
+                    <p class="text-muted" id="lastEntryCopy">Last entry: --</p>
+                </div>
+                <div style="text-align: right;">
+                    <span class="status-badge status-stable" id="patientStatus">Stable</span>
+                </div>
+            </div>
+            <div class="card subtle-card">
+                <strong>Focus reminders</strong>
+                <p class="text-muted" style="margin-top: 4px; font-size: 0.9rem;">Hydration • Noise sensitivity • Transition support</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex-between flex-row" style="margin-bottom: 10px;">
+                <h3>📝 Quick Log</h3>
+                <span class="pill ghost-pill">Autofills time & caregiver</span>
+            </div>
+            
+            <label>Mood (Tap one)</label>
+            <div class="option-grid">
+                <div class="option-btn" onclick="selectOption(this, 'mood')">😊<br><small>Happy</small></div>
+                <div class="option-btn" onclick="selectOption(this, 'mood')">😐<br><small>Neutral</small></div>
+                <div class="option-btn" onclick="selectOption(this, 'mood')">😣<br><small>Anxious</small></div>
+                <div class="option-btn" onclick="selectOption(this, 'mood')">😡<br><small>Angry</small></div>
+            </div>
+
+            <div class="grid-2" style="grid-template-columns: 1.4fr 1.6fr; margin-bottom: 10px;">
+                <div>
+                    <label>Hydration (this shift)</label>
+                    <div class="option-grid" id="hydrationOptions">
+                        <div class="option-btn" data-hydration="not_offered" onclick="selectHydration(this)">💧<br><small>Not offered yet</small></div>
+                        <div class="option-btn" data-hydration="offered_refused" onclick="selectHydration(this)">🚫<br><small>Offered / refused</small></div>
+                        <div class="option-btn" data-hydration="drank" onclick="selectHydration(this)">✅<br><small>Drank</small></div>
+                    </div>
+                    <p class="text-muted" id="hydrationSummary" style="font-size:0.85rem; margin-top:4px;">Hydration today: --</p>
+                </div>
+                <div>
+                    <label>Food</label>
+                    <select id="foodStatus">
+                        <option value="">Not logged</option>
+                        <option value="full">Full meal taken</option>
+                        <option value="partial">Partial meal</option>
+                        <option value="refused">Refused / very little</option>
+                    </select>
+                    <label>Medication</label>
+                    <select id="medStatus">
+                        <option value="">Not logged</option>
+                        <option value="given">Given on time</option>
+                        <option value="late">Given late</option>
+                        <option value="missed">Missed / skipped</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2" style="margin: 5px 0 10px 0; grid-template-columns: 1fr 1fr;">
+                <div>
+                    <label>Sleep start</label>
+                    <input type="time" id="sleepStart">
+                </div>
+                <div>
+                    <label>Sleep end</label>
+                    <input type="time" id="sleepEnd">
+                </div>
+            </div>
+
+            <details style="margin-bottom: 20px; background: rgba(0,0,0,0.03); padding: 12px; border-radius: 10px;">
+                <summary style="cursor: pointer; font-weight: bold; color: var(--primary);">▼ Open ABC Form (Behavior Incident)</summary>
+                <div style="margin-top: 15px;">
+                    <label>Antecedent (What happened before?)</label>
+                    <select>
+                        <option value="">Select antecedent</option>
+                        <option>No clear trigger</option>
+                        <option>Denied a request</option>
+                        <option>Loud noise / Sensory overload</option>
+                        <option>Transition between tasks</option>
+                        <option>Hunger / Fatigue</option>
+                    </select>
+
+                    <label>Behavior (What happened?)</label>
+                    <select>
+                        <option value="">Select behavior</option>
+                        <option>Headache / Pain reported</option>
+                        <option>Self-injury</option>
+                        <option>Aggression towards others</option>
+                        <option>Property destruction</option>
+                        <option>Verbal outburst</option>
+                    </select>
+
+                    <label>Consequence (What happened after?)</label>
+                    <select>
+                        <option value="">Select consequence</option>
+                        <option>Ignored</option>
+                        <option>Redirection</option>
+                        <option>Removed from area</option>
+                        <option>Medication given</option>
+                    </select>
+                </div>
+            </details>
+
+            <label>Caregiver Notes (Type or Speak)</label>
+            <div style="position: relative;">
+                <textarea id="noteArea" rows="3" placeholder="Describe specifics..."></textarea>
+                <button type="button" id="micBtn" onclick="startDictation()" 
+                        style="position: absolute; right: 10px; bottom: 25px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer;">
+                    🎙️
+                </button>
+            </div>
+
+            <div class="grid-2">
+                <button class="btn btn-outline">Add quick photo</button>
+                <button class="btn btn-outline">Tag staff</button>
+            </div>
+
+            <button class="btn btn-primary w-full" style="margin-top: 12px;" onclick="saveLog()">Save Log Entry</button>
+        </div>
+
+        <div class="card subtle-card">
+            <div class="flex-between flex-row">
+                <div>
+                    <h4>Recent Quick Logs</h4>
+                    <p class="text-muted" style="font-size: 0.9rem;">Latest 5 entries for this patient.</p>
+                </div>
+                <span class="pill ghost-pill">Auto-saves locally</span>
+            </div>
+            <div id="historyList" class="timeline" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="card" style="background: #eff6ff; border: 1px dashed var(--primary);">
+            <div class="flex-between flex-row">
+                <div>
+                    <h4>Share Data</h4>
+                    <p class="text-muted" style="font-size: 0.9rem;">Create temporary link for therapist.</p>
+                </div>
+                <div class="flex-row">
+                    <button class="btn btn-outline" style="background: white;" onclick="generateShareLink()">Generate Link 🔗</button>
+                    <button class="btn btn-outline" style="background: white;" onclick="copyShareLink()">Copy</button>
+                </div>
+            </div>
+            <div id="shareInfo" class="text-muted" style="margin-top: 8px; font-size: 0.9rem;">No active link.</div>
+        </div>
+
+    </div>
+
+    <script>
+        const patientSelect = document.getElementById('patientSelect');
+        const statusBadge = document.getElementById('patientStatus');
+        const lastEntryCopy = document.getElementById('lastEntryCopy');
+        const nextDue = document.getElementById('nextDue');
+        const nextDueCopy = document.getElementById('nextDueCopy');
+        const historyList = document.getElementById('historyList');
+        const shareInfo = document.getElementById('shareInfo');
+        const addPatientModalId = 'addPatientModal';
+
+        // Toggle Contrast
+        function toggleContrast() {
+            document.body.classList.toggle('high-contrast');
+            localStorage.setItem('contrast', document.body.classList.contains('high-contrast'));
+        }
+
+        function loadContrast() {
+            if (localStorage.getItem('contrast') === 'true') {
+                document.body.classList.add('high-contrast');
+            }
+        }
+
+        function initPatients() {
+            const patients = CareData.getPatients();
+            const selected = CareData.getSelectedPatient();
+            patientSelect.innerHTML = patients.map(p => `<option value="${p.id}">${p.name} (ID: ${p.id.toUpperCase()})</option>`).join('');
+            patientSelect.value = selected;
+            refreshSnapshot();
+            renderHistory();
+            renderShareInfo();
+        }
+
+        function selectOption(el, group) {
+            let siblings = el.parentNode.children;
+            for(let sib of siblings) sib.classList.remove('active');
+            el.classList.add('active');
+        }
+
+        function startDictation() {
+            if (window.hasOwnProperty('webkitSpeechRecognition') || window.hasOwnProperty('SpeechRecognition')) {
+                var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                var recognition = new SpeechRecognition();
+
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = "en-US";
+
+                let btn = document.getElementById('micBtn');
+                btn.classList.add('recording');
+
+                recognition.start();
+
+                recognition.onresult = function(e) {
+                    document.getElementById('noteArea').value += " " + e.results[0][0].transcript;
+                    recognition.stop();
+                    btn.classList.remove('recording');
+                };
+
+                recognition.onerror = function(e) {
+                    recognition.stop();
+                    btn.classList.remove('recording');
+                    alert("Voice recognition error. Please type manually.");
+                }
+            } else {
+                alert("Voice input not supported in this browser. Try Chrome/Edge.");
+            }
+        }
+
+        function currentPatientId() {
+            return patientSelect.value;
+        }
+
+        function loadPatientData() {
+            CareData.setSelectedPatient(currentPatientId());
+            refreshSnapshot();
+            renderHistory();
+            renderShareInfo();
+            broadcastRefresh();
+        }
+
+        function refreshSnapshot() {
+            const logs = CareData.getLogs(currentPatientId());
+            const status = CareData.computeStatusFromLogs(currentPatientId());
+            statusBadge.textContent = status === 'risk' ? 'Risk' : 'Stable';
+            statusBadge.className = `status-badge ${status === 'risk' ? 'status-risk' : 'status-stable'}`;
+
+            if (logs.length) {
+                lastEntryCopy.textContent = `Last entry: ${CareData.formatTimeAgo(logs[0].createdAt)}`;
+                const nextDueMinutes = Math.max(5, 120 - Math.round((Date.now() - logs[0].createdAt) / 60000));
+                nextDue.textContent = `Next due in ~${nextDueMinutes}m`;
+                nextDueCopy.textContent = `Based on last log at ${CareData.formatDateTime(logs[0].createdAt)}`;
+            } else {
+                lastEntryCopy.textContent = 'No entries yet';
+                nextDue.textContent = 'Next due: now';
+                nextDueCopy.textContent = 'Start with a quick mood tap.';
+            }
+
+            updateHydrationSummary();
+        }
+
+        function renderHistory() {
+            const logs = CareData.getLogs(currentPatientId()).slice(0, 5);
+            if (!logs.length) {
+                historyList.innerHTML = '<div class="timeline-item"><p class="text-muted">No quick logs yet.</p></div>';
+                return;
+            }
+            historyList.innerHTML = logs.map(log => {
+                let tags = '';
+                if (log.hydration === 'drank') tags += ' · Hydration: drank';
+                if (log.hydration === 'offered_refused') tags += ' · Hydration: offered / refused';
+                if (log.food === 'full') tags += ' · Food: full meal';
+                if (log.food === 'partial') tags += ' · Food: partial';
+                if (log.food === 'refused') tags += ' · Food: refused';
+                if (log.meds === 'given') tags += ' · Meds: given';
+                if (log.meds === 'late') tags += ' · Meds: late';
+                if (log.meds === 'missed') tags += ' · Meds: missed';
+                return `
+                <div class="timeline-item">
+                    <strong>${log.mood || 'Log'}</strong>
+                    <p class="text-muted" style="font-size:0.9rem;">
+                        ${log.note || 'No notes'}${tags}
+                        · ${CareData.formatTimeAgo(log.createdAt)}
+                    </p>
+                </div>`;
+            }).join('');
+        }
+
+        function saveLog() {
+            const moodEl = document.querySelector('.option-btn.active');
+            const mood = moodEl ? moodEl.innerText.split('\n')[0] : '—';
+            const hydrationEl = document.querySelector('#hydrationOptions .option-btn.active');
+            const hydration = hydrationEl ? hydrationEl.getAttribute('data-hydration') : '';
+            const food = document.getElementById('foodStatus').value;
+            const meds = document.getElementById('medStatus').value;
+            const selects = document.querySelectorAll('details select');
+            const [antecedent, behavior, consequence] = Array.from(selects).map(s => s.value || '');
+            const note = document.getElementById('noteArea').value.trim();
+            const sleepStart = document.getElementById('sleepStart').value;
+            const sleepEnd = document.getElementById('sleepEnd').value;
+            CareData.addLog(currentPatientId(), { mood, antecedent, behavior, consequence, note, sleepStart, sleepEnd, hydration, food, meds });
+            document.getElementById('noteArea').value = "";
+            document.getElementById('sleepStart').value = "";
+            document.getElementById('sleepEnd').value = "";
+            document.getElementById('foodStatus').value = "";
+            document.getElementById('medStatus').value = "";
+            if (hydrationEl) hydrationEl.classList.remove('active');
+            refreshSnapshot();
+            renderHistory();
+            alert('Log saved locally and reflected in dashboard.');
+            broadcastRefresh();
+        }
+
+        function removeCurrentPatient() {
+            const pid = currentPatientId();
+            const patient = CareData.getPatient(pid);
+            if (!patient) return;
+            if (!confirm(`Remove ${patient.name}? This clears their local logs and notes.`)) return;
+            CareData.removePatient(pid);
+            initPatients();
+            patientSelect.value = CareData.getSelectedPatient();
+            refreshSnapshot();
+            renderHistory();
+            renderShareInfo();
+            broadcastRefresh();
+        }
+
+        function renderShareInfo() {
+            const link = CareData.getShareLink(currentPatientId());
+            if (!link) {
+                shareInfo.textContent = 'No active link.';
+                return;
+            }
+            const mins = CareData.minutesUntil(link.expiresAt);
+            shareInfo.textContent = `${link.url} (expires in ${mins}m)`;
+        }
+
+        function generateShareLink() {
+            const link = CareData.upsertShareLink(currentPatientId());
+            renderShareInfo();
+            alert(`Secure Link Generated: ${link.url}\nValid for 24 hours.`);
+        }
+
+        function copyShareLink() {
+            const link = CareData.getShareLink(currentPatientId());
+            if (!link) return alert('No active link to copy.');
+            navigator.clipboard?.writeText(link.url);
+            alert('Link copied to clipboard.');
+        }
+
+        function selectHydration(el) {
+            const container = document.getElementById('hydrationOptions');
+            if (!container) return;
+            Array.from(container.children).forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function updateHydrationSummary() {
+            const summaryEl = document.getElementById('hydrationSummary');
+            if (!summaryEl) return;
+            const logs = CareData.getLogs(currentPatientId());
+            const todayKey = new Date().toDateString();
+            let offered = 0;
+            let drank = 0;
+            logs.forEach(l => {
+                const d = new Date(l.createdAt);
+                if (d.toDateString() !== todayKey) return;
+                if (l.hydration === 'drank') drank++;
+                if (l.hydration === 'offered_refused' || l.hydration === 'drank') offered++;
+            });
+            if (!offered && !drank) {
+                summaryEl.textContent = 'Hydration today: not logged yet';
+            } else {
+                summaryEl.textContent = `Hydration today: offered ${offered}x • drank ${drank}x`;
+            }
+        }
+
+        // Simple modal builder for adding patients
+        function openAddPatient() {
+            if (document.getElementById(addPatientModalId)) {
+                document.getElementById(addPatientModalId).style.display = 'block';
+                return;
+            }
+            const modal = document.createElement('div');
+            modal.id = addPatientModalId;
+            modal.style.position = 'fixed';
+            modal.style.inset = '0';
+            modal.style.background = 'rgba(0,0,0,0.35)';
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.innerHTML = `
+                <div class="card" style="max-width: 420px; width: 90%;">
+                    <h3>Add Patient</h3>
+                    <label>Name</label>
+                    <input id="newPName" placeholder="Alex Doe" />
+                    <label>ID (no spaces)</label>
+                    <input id="newPID" placeholder="alex" />
+                    <label>Diagnosis</label>
+                    <input id="newPDiag" placeholder="ASD Level 2" />
+                    <label>Status</label>
+                    <select id="newPStatus">
+                        <option value="stable">Stable</option>
+                        <option value="risk">Risk</option>
+                    </select>
+                    <div class="flex-row" style="margin-top: 10px;">
+                        <button class="btn btn-primary w-full" onclick="savePatient()">Save</button>
+                        <button class="btn btn-outline w-full" onclick="closeAddPatient()">Cancel</button>
+                    </div>
+                </div>`;
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeAddPatient(); });
+            document.body.appendChild(modal);
+        }
+
+        function closeAddPatient() {
+            const modal = document.getElementById(addPatientModalId);
+            if (modal) modal.style.display = 'none';
+        }
+
+        function savePatient() {
+            const name = document.getElementById('newPName').value.trim();
+            const id = document.getElementById('newPID').value.trim().toLowerCase();
+            const diagnosis = document.getElementById('newPDiag').value.trim();
+            const status = document.getElementById('newPStatus').value;
+            if (!name || !id) return alert('Name and ID required.');
+            try {
+                CareData.addPatient({ id, name, diagnosis: diagnosis || '—', status, sleepHours: [7,7,7,7,7,7,7] });
+            } catch (e) {
+                return alert(e.message);
+            }
+            closeAddPatient();
+            initPatients();
+            CareData.setSelectedPatient(id);
+            patientSelect.value = id;
+            refreshSnapshot();
+            renderHistory();
+            broadcastRefresh();
+            alert('Patient added.');
+        }
+
+        // Cross-tab/page update notifier
+        function broadcastRefresh() {
+            localStorage.setItem('cc-refresh', Date.now().toString());
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'cc-refresh') {
+                initPatients();
+            }
+        });
+
+        // Init
+        loadContrast();
+        initPatients();
+    </script>
+</body>
+</html>

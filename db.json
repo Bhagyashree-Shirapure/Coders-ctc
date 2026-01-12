@@ -1,0 +1,105 @@
+{
+  "users": [],
+  "history": [],
+  "admins": [
+    {
+      "username": "admin",
+      "password": "password"
+    }
+  ],
+  "patients": [],
+  "logs": [
+    {
+      "patientId": "alex",
+      "createdAt": 1766235569143,
+      "mood": "😐",
+      "note": "test"
+    },
+    {
+      "patientId": "alex",
+      "createdAt": 1766236501673,
+      "mood": "😊",
+      "antecedent": "",
+      "behavior": "",
+      "consequence": "",
+      "note": "good moode"
+    },
+    {
+      "patientId": "alex",
+      "createdAt": 1766236913917,
+      "mood": "😊",
+      "antecedent": "",
+      "behavior": "",
+      "consequence": "",
+      "note": "was in good mode"
+    },
+    {
+      "patientId": "alex",
+      "createdAt": 1766239292263,
+      "mood": "😐",
+      "antecedent": "",
+      "behavior": "",
+      "consequence": "",
+      "note": "didnt have his food"
+    },
+    {
+      "patientId": "alex",
+      "createdAt": 1766239485357,
+      "mood": "😣",
+      "antecedent": "",
+      "behavior": "",
+      "consequence": "",
+      "note": ""
+    },
+    {
+      "patientId": "alex",
+      "createdAt": 1768237489700,
+      "mood": "😡",
+      "antecedent": "",
+      "behavior": "",
+      "consequence": "",
+      "note": "",
+      "sleepStart": "",
+      "sleepEnd": "",
+      "hydration": "offered_refused",
+      "food": "partial",
+      "meds": "given"
+    },
+    {
+      "patientId": "mike",
+      "createdAt": 1768237809812,
+      "mood": "—",
+      "antecedent": "",
+      "behavior": "",
+      "consequence": "",
+      "note": "",
+      "sleepStart": "",
+      "sleepEnd": "",
+      "hydration": "",
+      "food": "partial",
+      "meds": ""
+    },
+    {
+      "patientId": "mike",
+      "createdAt": 1768237908581,
+      "mood": "—",
+      "antecedent": "",
+      "behavior": "",
+      "consequence": "",
+      "note": "",
+      "sleepStart": "",
+      "sleepEnd": "",
+      "hydration": "",
+      "food": "full",
+      "meds": ""
+    }
+  ],
+  "clinicianNotes": [],
+  "shareLinks": {
+    "alex": {
+      "code": "O58G3G",
+      "url": "http://localhost:3000/share/O58G3G",
+      "expiresAt": 1766321925634
+    }
+  }
+}
